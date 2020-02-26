@@ -1,8 +1,13 @@
-/* add css styles here (optional) */
-
-.test {
-  display: inline-block;
-  margin: 2em auto;
-  border: 2px solid #000;
-  font-size: 2em;
+.wrapper {
+  position: relative;
+}
+.item-wrapper {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 50% 0%;
+}
+.item-wrapper:first-child {
+  position: relative;
 }
