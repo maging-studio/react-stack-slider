@@ -38,6 +38,8 @@ const getOpacity = (position: number = 0, reverse: boolean = false): number => {
 
 export const Slider = (props: IImageSliderProps) => {
   const { imagesArray, className } = props;
+  const [disabled, setDisabled] = useState<boolean>(false);
+  const [isDragging, setDragging] = useState<boolean>(false);
   const [images, setImages] = useState<ReactNode[]>(imagesArray);
   const [activeDrags, setActiveDrags] = useState<number>(0);
   const [position, setPosition] = useState<{ x: number; y: number }>(
@@ -67,12 +69,48 @@ export const Slider = (props: IImageSliderProps) => {
           index === images.length - 1 ? firstImage : images[index + 1]
         );
       setImages(newImagesArray);
+      setPosition(defaultPosition);
+    } else {
+      let timer = data.lastY;
+      const interval = setInterval(() => {
+        timer = timer - data.lastY * 0.1 * Math.E;
+        if (timer > 0) {
+          setPosition({ x: 0, y: timer });
+        } else {
+          clearInterval(interval);
+          setPosition(defaultPosition);
+        }
+      }, 100);
     }
-    setPosition(defaultPosition);
   };
 
   const onDrag = (_: any, data: DraggableData): void => {
+    setDragging(true);
     setPosition({ x: data.x, y: data.y });
+  };
+
+  const handleClick = () => {
+    if (!isDragging) {
+      let timer = 0;
+      const firstImage = images[0];
+      const newArray = [...images, firstImage];
+      setImages(newArray);
+      const interval = setInterval(() => {
+        timer++;
+        if (timer < slideTrigger / 24) {
+          setPosition({ x: 0, y: timer * 24 });
+          setDisabled(true);
+        } else {
+          const newImagesArray = images.map((_, index) =>
+            index === images.length - 1 ? firstImage : images[index + 1]
+          );
+          setImages(newImagesArray);
+          clearInterval(interval);
+          setDisabled(false);
+          setPosition(defaultPosition);
+        }
+      }, 100);
+    } else setDragging(false);
   };
 
   const dragHandlers = {
@@ -115,6 +153,8 @@ export const Slider = (props: IImageSliderProps) => {
               position: "relative"
             }}
             key={0}
+            onClick={handleClick}
+            className={disabled ? styles["disable"] : ""}
           >
             <Draggable
               scale={getScale(index, position.y)}
