@@ -87,6 +87,7 @@ export const Slider = (props: IImageSliderProps) => {
         index === images.length - 1 ? images[0] : images[index + 1]
       );
     setImages(newImagesArray);
+    setDragging(false);
   };
 
   const animatePositionTo = (
@@ -96,7 +97,7 @@ export const Slider = (props: IImageSliderProps) => {
   ): void => {
     let timer = direction === "forward" ? 0 : endPosition;
     const interval = setInterval(() => {
-      direction === "forward" ? timer++ : timer--;
+      timer = direction === "forward" ? timer + 3 : timer - 3;
       if (
         (direction === "forward" && timer < endPosition) ||
         (direction === "back" && timer > 0)
