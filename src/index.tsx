@@ -61,13 +61,7 @@ export const Slider = (props: IImageSliderProps) => {
     setImages(images.slice(0, images.length - 1));
     if (data.lastY === slideTrigger) {
       setActiveDrags(activeDrags - 1);
-      const firstImage = images[0];
-      const newImagesArray = images
-        .slice(0, images.length - 1)
-        .map((_, index) =>
-          index === images.length - 1 ? firstImage : images[index + 1]
-        );
-      setImages(newImagesArray);
+      swapSlides();
       setPosition(defaultPosition);
     } else animatePositionTo(data.lastY, "back");
   };
@@ -83,6 +77,16 @@ export const Slider = (props: IImageSliderProps) => {
       setImages(newArray);
       animatePositionTo(slideTrigger, "forward", true);
     } else setDragging(false);
+  };
+
+  const swapSlides = (isClick: boolean = false) => {
+    const slicePart = isClick ? 0 : 1;
+    const newImagesArray = images
+      .slice(0, images.length - slicePart)
+      .map((_, index) =>
+        index === images.length - 1 ? images[0] : images[index + 1]
+      );
+    setImages(newImagesArray);
   };
 
   const animatePositionTo = (
@@ -102,10 +106,7 @@ export const Slider = (props: IImageSliderProps) => {
       } else {
         setPosition(defaultPosition);
         if (isClick) {
-          const newImagesArray = images.map((_, index) =>
-            index === images.length - 1 ? images[0] : images[index + 1]
-          );
-          setImages(newImagesArray);
+          swapSlides(isClick);
           setDisabled(false);
         }
         clearInterval(interval);
