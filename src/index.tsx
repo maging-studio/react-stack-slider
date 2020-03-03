@@ -50,7 +50,6 @@ export const Slider = (props: IImageSliderProps) => {
 
   const onStart = (e: DraggableEvent): void => {
     e.preventDefault();
-    // TS запрещает использовать ++activeDrags
     setActiveDrags(activeDrags + 1);
     const firstImage = images[0];
     const newImagesArray = [...images, firstImage];
@@ -70,18 +69,7 @@ export const Slider = (props: IImageSliderProps) => {
         );
       setImages(newImagesArray);
       setPosition(defaultPosition);
-    } else {
-      let timer = data.lastY;
-      const interval = setInterval(() => {
-        timer = timer - data.lastY * 0.1 * Math.E;
-        if (timer > 0) {
-          setPosition({ x: 0, y: timer });
-        } else {
-          clearInterval(interval);
-          setPosition(defaultPosition);
-        }
-      }, 100);
-    }
+    } else animatePositionTo(data.lastY, "back");
   };
 
   const onDrag = (_: any, data: DraggableData): void => {
@@ -91,26 +79,38 @@ export const Slider = (props: IImageSliderProps) => {
 
   const handleClick = () => {
     if (!isDragging) {
-      let timer = 0;
-      const firstImage = images[0];
-      const newArray = [...images, firstImage];
+      const newArray = [...images, images[0]];
       setImages(newArray);
-      const interval = setInterval(() => {
-        timer++;
-        if (timer < slideTrigger / 24) {
-          setPosition({ x: 0, y: timer * 24 });
-          setDisabled(true);
-        } else {
+      animatePositionTo(slideTrigger, "forward", true);
+    } else setDragging(false);
+  };
+
+  const animatePositionTo = (
+    endPosition: number,
+    direction: "back" | "forward" = "forward",
+    isClick: boolean = false
+  ): void => {
+    let timer = direction === "forward" ? 0 : endPosition;
+    const interval = setInterval(() => {
+      direction === "forward" ? timer++ : timer--;
+      if (
+        (direction === "forward" && timer < endPosition) ||
+        (direction === "back" && timer > 0)
+      ) {
+        setPosition({ x: 0, y: timer });
+        if (isClick) setDisabled(true);
+      } else {
+        setPosition(defaultPosition);
+        if (isClick) {
           const newImagesArray = images.map((_, index) =>
-            index === images.length - 1 ? firstImage : images[index + 1]
+            index === images.length - 1 ? images[0] : images[index + 1]
           );
           setImages(newImagesArray);
-          clearInterval(interval);
           setDisabled(false);
-          setPosition(defaultPosition);
         }
-      }, 100);
-    } else setDragging(false);
+        clearInterval(interval);
+      }
+    }, 10);
   };
 
   const dragHandlers = {
