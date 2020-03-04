@@ -38,6 +38,8 @@ const getOpacity = (position: number = 0, reverse: boolean = false): number => {
 
 export const Slider = (props: IImageSliderProps) => {
   const { imagesArray, className } = props;
+  const [disabled, setDisabled] = useState<boolean>(false);
+  const [isDragging, setDragging] = useState<boolean>(false);
   const [images, setImages] = useState<ReactNode[]>(imagesArray);
   const [activeDrags, setActiveDrags] = useState<number>(0);
   const [position, setPosition] = useState<{ x: number; y: number }>(
@@ -48,7 +50,6 @@ export const Slider = (props: IImageSliderProps) => {
 
   const onStart = (e: DraggableEvent): void => {
     e.preventDefault();
-    // TS запрещает использовать ++activeDrags
     setActiveDrags(activeDrags + 1);
     const firstImage = images[0];
     const newImagesArray = [...images, firstImage];
@@ -60,19 +61,58 @@ export const Slider = (props: IImageSliderProps) => {
     setImages(images.slice(0, images.length - 1));
     if (data.lastY === slideTrigger) {
       setActiveDrags(activeDrags - 1);
-      const firstImage = images[0];
-      const newImagesArray = images
-        .slice(0, images.length - 1)
-        .map((_, index) =>
-          index === images.length - 1 ? firstImage : images[index + 1]
-        );
-      setImages(newImagesArray);
-    }
-    setPosition(defaultPosition);
+      swapSlides();
+      setPosition(defaultPosition);
+    } else animatePositionTo(data.lastY, "back");
   };
 
   const onDrag = (_: any, data: DraggableData): void => {
+    setDragging(true);
     setPosition({ x: data.x, y: data.y });
+  };
+
+  const handleClick = () => {
+    if (!isDragging) {
+      const newArray = [...images, images[0]];
+      setImages(newArray);
+      animatePositionTo(slideTrigger, "forward", true);
+    } else setDragging(false);
+  };
+
+  const swapSlides = (isClick: boolean = false) => {
+    const slicePart = isClick ? 0 : 1;
+    const newImagesArray = images
+      .slice(0, images.length - slicePart)
+      .map((_, index) =>
+        index === images.length - 1 ? images[0] : images[index + 1]
+      );
+    setImages(newImagesArray);
+    setDragging(false);
+  };
+
+  const animatePositionTo = (
+    endPosition: number,
+    direction: "back" | "forward" = "forward",
+    isClick: boolean = false
+  ): void => {
+    let timer = direction === "forward" ? 0 : endPosition;
+    const interval = setInterval(() => {
+      timer = direction === "forward" ? timer + 3 : timer - 3;
+      if (
+        (direction === "forward" && timer < endPosition) ||
+        (direction === "back" && timer > 0)
+      ) {
+        setPosition({ x: 0, y: timer });
+        if (isClick) setDisabled(true);
+      } else {
+        setPosition(defaultPosition);
+        if (isClick) {
+          swapSlides(isClick);
+          setDisabled(false);
+        }
+        clearInterval(interval);
+      }
+    }, 10);
   };
 
   const dragHandlers = {
@@ -115,6 +155,8 @@ export const Slider = (props: IImageSliderProps) => {
               position: "relative"
             }}
             key={0}
+            onClick={handleClick}
+            className={disabled ? styles["disable"] : ""}
           >
             <Draggable
               scale={getScale(index, position.y)}

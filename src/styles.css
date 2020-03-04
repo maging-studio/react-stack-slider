@@ -11,3 +11,6 @@
 .item-wrapper:first-child {
   position: relative;
 }
+.disable {
+  pointer-events: none;
+}
