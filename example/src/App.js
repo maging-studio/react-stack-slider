@@ -90,7 +90,12 @@ export const App = () => {
       src: proserpineAbduction,
       info:
         "**Художник:** Ян Брейгель Старший\n**Название:** «Похищение Прозерпины»\n"
-    }
+    },
+    // {
+    //   src: persephoneReturn,
+    //   info:
+    //     "**Художник:** Ян Брейгель Старший\n**Название:** «Похищение Прозерпины»\n"
+    // }
   ];
   const imagesArray = images.map((image, index) => (
     <ImageWithInfo

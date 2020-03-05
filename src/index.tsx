@@ -7,6 +7,8 @@ interface IImageSliderProps {
   imagesArray: ReactNode[];
 }
 
+type TDirection = 'forward' | 'back';
+
 const scaleFactor = 0.85;
 const offset = 40;
 const defaultPosition = { x: 0, y: 0 };
@@ -42,28 +44,39 @@ export const Slider = (props: IImageSliderProps) => {
   const [isDragging, setDragging] = useState<boolean>(false);
   const [images, setImages] = useState<ReactNode[]>(imagesArray);
   const [activeDrags, setActiveDrags] = useState<number>(0);
-  const [position, setPosition] = useState<{ x: number; y: number }>(
-    defaultPosition
-  );
+  const [position, setPosition] = useState<{ x: number; y: number }>(defaultPosition);
 
-  const bounds = { top: 0, left: 0, right: 0, bottom: slideTrigger };
+  const bounds = {
+    top: -slideTrigger,
+    bottom: slideTrigger,
+    left: 0,
+    right: 0,
+  };
 
   const onStart = (e: DraggableEvent): void => {
     e.preventDefault();
     setActiveDrags(activeDrags + 1);
     const firstImage = images[0];
-    const newImagesArray = [...images, firstImage];
+    const lastImage = images[images.length - 1];
+    const newImagesArray = [lastImage, ...images, firstImage];
     setImages(newImagesArray);
   };
 
   const onStop = (e: DraggableEvent, data: DraggableData): void => {
     e.preventDefault();
-    setImages(images.slice(0, images.length - 1));
-    if (data.lastY === slideTrigger) {
-      setActiveDrags(activeDrags - 1);
-      swapSlides();
+    // setImages(images.slice(1, images.length - 1));
+    setActiveDrags(activeDrags - 1);
+
+    if (data.lastY === bounds.bottom) {
+      // swapSlides('forward');
+      setImages(images.slice(2, images.length));
       setPosition(defaultPosition);
-    } else animatePositionTo(data.lastY, "back");
+    } else if (data.lastY === bounds.top) {
+      // swapSlides('back');
+      setImages(images.slice(0, images.length - 2));
+      setPosition(defaultPosition);
+    }
+    else animatePositionTo(data.lastY, data.lastY < 0 ? 'forward' : 'back');
   };
 
   const onDrag = (_: any, data: DraggableData): void => {
@@ -72,34 +85,37 @@ export const Slider = (props: IImageSliderProps) => {
   };
 
   const handleClick = () => {
-    if (!isDragging) {
-      const newArray = [...images, images[0]];
-      setImages(newArray);
-      animatePositionTo(slideTrigger, "forward", true);
-    } else setDragging(false);
+    if (isDragging) return setDragging(false);
+    const newArray = [...images, images[0]];
+    setImages(newArray);
+    animatePositionTo(slideTrigger, "forward", true);
   };
 
-  const swapSlides = (isClick: boolean = false) => {
-    const slicePart = isClick ? 0 : 1;
-    const newImagesArray = images
-      .slice(0, images.length - slicePart)
-      .map((_, index) =>
-        index === images.length - 1 ? images[0] : images[index + 1]
-      );
+  const swapSlides = (direction: TDirection = "forward", isClick: boolean = false) => {
+    // const slicePart = isClick ? 0 : 1;
+    const sliceStart = direction === 'forward' ? 1 : 0;
+    const sliceEnd = images.length - (direction === 'back' ? 1 : 0);
+    const newImagesArray = images.slice(sliceStart, sliceEnd);
+    // console.log(sliceStart, sliceEnd);
+    // const newImagesArray = images
+    //   .slice(0, images.length - slicePart)
+    //   .map((_, index) =>
+    //     index === images.length - 1 ? images[0] : images[index + 1]
+    //   );
     setImages(newImagesArray);
     setDragging(false);
   };
 
   const animatePositionTo = (
     endPosition: number,
-    direction: "back" | "forward" = "forward",
+    direction: TDirection = "forward",
     isClick: boolean = false
   ): void => {
-    let timer = direction === "forward" ? 0 : endPosition;
+    let timer = endPosition;
     const interval = setInterval(() => {
       timer = direction === "forward" ? timer + 3 : timer - 3;
       if (
-        (direction === "forward" && timer < endPosition) ||
+        (direction === "forward" && timer < 0) ||
         (direction === "back" && timer > 0)
       ) {
         setPosition({ x: 0, y: timer });
@@ -107,7 +123,7 @@ export const Slider = (props: IImageSliderProps) => {
       } else {
         setPosition(defaultPosition);
         if (isClick) {
-          swapSlides(isClick);
+          swapSlides(direction, isClick);
           setDisabled(false);
         }
         clearInterval(interval);
@@ -139,7 +155,7 @@ export const Slider = (props: IImageSliderProps) => {
               opacity:
                 index === 0
                   ? getOpacity(position.y)
-                  : index === imagesArray.length
+                  : index === imagesArray.length + 1
                   ? getOpacity(position.y, true)
                   : 1
             }}
